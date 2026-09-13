@@ -24,9 +24,10 @@ def generate_vector(text: str) -> list:
     """
         Nhận text trả về biểu diễn vector
     """
+    tokens = re.findall(r"\w+", text)
     vector = []
     for word in vocabulary:
-        vector.append(text.count(word))
+        vector.append(tokens.count(word))
     return vector
 
 def build_freq(cleaned_segment: list) -> dict:
@@ -39,7 +40,8 @@ def count_text_content_word(document: list, word: str) -> int:
     '''Trả về số lượng text chứa word'''
     cnt = 0
     for text in document:
-        if word in text:
+        tokens = re.findall(r"\w+", text)
+        if word in tokens:
             cnt += 1
     return cnt
 
@@ -51,14 +53,15 @@ text1 = "Nam sống ở thành phố, đang học đại học, quen Lan ở tr�
 text2 = "Nam mới mua một cuốn sách mới. Nam rất thích đọc sách. Nam có nhiều cuốn sách rất hay."
 
 text1 = text1.lower()
-text2= text2.lower()
+text2 = text2.lower()
 
 
 documents = [text1, text2]
 
+# Tách từ cho toàn bộ documents
 word_segment = []
 for document in documents:
-    word_segment.extend(re.split(r"[,\.\s]+", document)[:-1]) # Loại phần tử rỗng cuối câu
+    word_segment.extend(re.findall(r"\w+", document))
 
 # Build vocabulary
 unique_word = set(word_segment)
@@ -73,38 +76,32 @@ print(f"Vector 2: {v2}")
 # Tính TF
 tf1 = []
 tf2 = []
+len1 = len(re.findall(r"\w+", text1))
+len2 = len(re.findall(r"\w+", text2))
+
 for value in v1:
-    tf1.append(round(value/len(text1.split(' ')),2))
+    tf1.append(round(value / len1, 2))
 for value in v2:
-    tf2.append(round(value/len(text2.split(' ')),2))
+    tf2.append(round(value / len2, 2))
 
 print(f"TF 1: {tf1}")
 print(f"TF 2: {tf2}")
 
-# Tính IDF
-idf1 = []
-idf2 = []
+# Tính IDF cho từng từ trong vocabulary
+idf = []
+for word in vocabulary:
+    df = count_text_content_word(documents, word)
+    idf.append(round(np.log(TOTAL_TEXT / df + 1), 2))
 
-for word in text1.split(' '):
-    idf1.append(round(np.log(TOTAL_TEXT/count_text_content_word(documents, word)+1),2))
-for word in text2.split(' '):
-    idf2.append(round(np.log(TOTAL_TEXT/count_text_content_word(documents, word)+1),2))
+print(f"IDF: {idf}")
 
-print(f"IDF 1: {idf1}")
-print(f"IDF 2: {idf2}")
-
-# Tính TF-IDF:
+# Tính TF-IDF
 tf_idf1 = []
 tf_idf2 = []
-
-for word in text1.split():
-    tf = tf1[vocabulary.index(word)]
-    idf = idf1[vocabulary.index(word)]
-    tf_idf1.append(round(tf*idf,2))
-for word in text2.split():
-    tf = tf2[vocabulary.index(word)]
-    idf = idf2[vocabulary.index(word)]
-    tf_idf2.append(round(tf*idf,2))
+for tf, idf_val in zip(tf1, idf):
+    tf_idf1.append(round(tf * idf_val, 2))
+for tf, idf_val in zip(tf2, idf):
+    tf_idf2.append(round(tf * idf_val, 2))
 
 print(f"TF-IDF 1: {tf_idf1}")
 print(f"TF-IDF 2: {tf_idf2}")
